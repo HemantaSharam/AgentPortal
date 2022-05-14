@@ -1,0 +1,26 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+  pre_build:
+    commands:
+      - echo "Entered the pre-build phase"
+      - $(aws ecr get-login  --no-include-email --region us-east-1)
+  build:
+    commands:
+      - echo "Entered build phase"
+      - cd Consumer
+      - mvn compile
+      - mvn package
+      - echo " building docker image"
+      - docker build -t consumer/consumerapp .
+      - docker tag consumer/consumerapp 038849744303.dkr.ecr.us-east-1.amazonaws.com/consumer-registry:consumerapp
+  post_build:
+    commands:
+    - echo "Entered the post-build phase"
+    - docker push 038849744303.dkr.ecr.us-east-1.amazonaws.com/consumer-registry:consumerapp
+    - printf '[{"name":"consumer-container","imageUri":"%s"}]' 038849744303.dkr.ecr.us-east-1.amazonaws.com/consumer-registry:consumerapp > taskdefinition.json
+artifacts:
+  files:
+    - Consumer/taskdefinition.json
